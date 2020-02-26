@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "663057972791",
+    "firebase_url": "https://towing-da9a8.firebaseio.com",
+    "project_id": "towing-da9a8",
+    "storage_bucket": "towing-da9a8.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:663057972791:android:cefa7ac9bf5a99b68849b2",
+        "android_client_info": {
+          "package_name": "com.example.towing"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "663057972791-kmgrvh02nul9jja2b8ln83cp63g09bd7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVi6htsCZT3HiU6cPC6KiXuaAZvkpps6g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "663057972791-kmgrvh02nul9jja2b8ln83cp63g09bd7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
