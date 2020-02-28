@@ -17,6 +17,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -39,6 +40,12 @@ public class CustomerLoginActivity extends AppCompatActivity implements View.OnC
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         setTitle("Customer");
         firebaseAuth=FirebaseAuth.getInstance();
+        FirebaseUser firebaseUser=FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser!=null&&firebaseUser.isEmailVerified())
+        {
+            //finish();
+            startActivity(new Intent(CustomerLoginActivity.this,CustomerMapsActivity.class));
+        }
 
         progressDialog=new ProgressDialog(this);
         btnSignin.setOnClickListener(this);
@@ -61,8 +68,8 @@ public class CustomerLoginActivity extends AppCompatActivity implements View.OnC
             ResetPassword();
         }
     }
-    //signing in a customer to firebase
-    private void SignIn() {
+    //signing up a customer to firebase
+    private void SignUp() {
         String email=txtemail.getText().toString().trim();
         String password=txtpass.getText().toString().trim();
         if (TextUtils.isEmpty(email)&&TextUtils.isEmpty(password))
@@ -71,7 +78,7 @@ public class CustomerLoginActivity extends AppCompatActivity implements View.OnC
                     Toast.LENGTH_SHORT).show();
             return;
         }
-        progressDialog.setMessage("signing you in please wait....");
+        progressDialog.setMessage("signing you up please wait....");
         progressDialog.show();
         firebaseAuth.createUserWithEmailAndPassword(email,password).addOnCompleteListener
                 (new OnCompleteListener<AuthResult>() {
@@ -114,7 +121,7 @@ public class CustomerLoginActivity extends AppCompatActivity implements View.OnC
 
     }
     //LOGIN  A CUSTOMER
-    private void SignUp() {
+    private void SignIn() {
         String email=txtemail.getText().toString().trim();
         String password=txtpass.getText().toString().trim();
         if (TextUtils.isEmpty(email)&&TextUtils.isEmpty(password))
@@ -138,6 +145,9 @@ public class CustomerLoginActivity extends AppCompatActivity implements View.OnC
                         databaseReference.setValue(true);
                         Toast.makeText(CustomerLoginActivity.this
                                 , "successfully logged in",Toast.LENGTH_SHORT).show();
+
+                        finish();
+                        startActivity(new Intent(CustomerLoginActivity.this,CustomerMapsActivity.class));
                     }
                     else
                     {
@@ -156,6 +166,29 @@ public class CustomerLoginActivity extends AppCompatActivity implements View.OnC
     }
 
     private void ResetPassword() {
+        String email=txtemail.getText().toString().trim();
+        if (TextUtils.isEmpty(email))
+        {
+            Toast.makeText(this, "please enter email", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        progressDialog.setMessage("loading....");
+        progressDialog.show();
+        firebaseAuth.sendPasswordResetEmail(email).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if (task.isSuccessful())
+                {
+                    Toast.makeText(CustomerLoginActivity.this, "check your email for password reset", Toast.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    Toast.makeText(CustomerLoginActivity.this, ""+task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                }
+                progressDialog.dismiss();
+
+            }
+        });
 
     }
 }
