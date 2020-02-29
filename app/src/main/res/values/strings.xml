@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Towing</string>
     <string name="title_activity_customer_maps">Map</string>
+    <string name="title_activity_workers_maps">Map</string>
 </resources>

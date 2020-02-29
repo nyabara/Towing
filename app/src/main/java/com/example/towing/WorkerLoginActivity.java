@@ -38,14 +38,14 @@ public class WorkerLoginActivity extends AppCompatActivity implements View.OnCli
         txtpass = findViewById(R.id.txtpass);
         txtResetPass = findViewById(R.id.txtResetPass);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        setTitle("Customer");
+        setTitle("Worker");
         firebaseAuth = FirebaseAuth.getInstance();
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        /*if (firebaseUser!=null&&firebaseUser.isEmailVerified())
+        if (firebaseUser!=null&&firebaseUser.isEmailVerified())
         {
-            //finish();
-            startActivity(new Intent(WorkerLoginActivity.this,CustomerMapsActivity.class));
-        }*/
+            finish();
+            startActivity(new Intent(WorkerLoginActivity.this,WorkersMapsActivity.class));
+        }
 
         progressDialog = new ProgressDialog(this);
         btnSignin.setOnClickListener(this);
@@ -136,7 +136,7 @@ public class WorkerLoginActivity extends AppCompatActivity implements View.OnCli
                                 , "successfully logged in", Toast.LENGTH_SHORT).show();
 
                         finish();
-                        startActivity(new Intent(WorkerLoginActivity.this, CustomerMapsActivity.class));
+                        startActivity(new Intent(WorkerLoginActivity.this, WorkersMapsActivity.class));
                     } else {
                         Toast.makeText(WorkerLoginActivity.this, "" + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                     }
