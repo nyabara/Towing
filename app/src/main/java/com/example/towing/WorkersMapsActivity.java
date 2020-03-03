@@ -6,6 +6,7 @@ import androidx.fragment.app.FragmentActivity;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
@@ -51,7 +52,10 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
         logout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                firebaseAuth.signOut();
+                firebaseAuth.getInstance().signOut();
+                startActivity(new Intent(WorkersMapsActivity.this,MainActivity.class));
+                finish();
+                return;
             }
         });
 
@@ -70,7 +74,7 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
         else
         {
             Location location=locationManager.getLastKnownLocation(provider);
-            if (location == null) {
+            if (location !=null) {
                 onLocationChanged(location);
             }
         }
