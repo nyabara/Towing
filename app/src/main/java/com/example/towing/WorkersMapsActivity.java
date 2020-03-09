@@ -26,6 +26,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -37,21 +38,21 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.List;
 import java.util.Map;
 
-public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyCallback,LocationListener {
+public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
 
     private GoogleMap mMap;
     Button logout;
     LocationManager locationManager;
     String provider;
-    double lat,lng;
+    double lat, lng;
     FirebaseAuth firebaseAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_workers_maps);
-        logout=findViewById(R.id.logout);
-        firebaseAuth=FirebaseAuth.getInstance();
+        logout = findViewById(R.id.logout);
+        firebaseAuth = FirebaseAuth.getInstance();
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -59,16 +60,16 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
             @Override
             public void onClick(View v) {
                 firebaseAuth.getInstance().signOut();
-                startActivity(new Intent(WorkersMapsActivity.this,MainActivity.class));
+                startActivity(new Intent(WorkersMapsActivity.this, MainActivity.class));
                 finish();
                 return;
             }
         });
 
-        locationManager=(LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         //provide  a criteria for showing your location
-        Criteria criteria=new Criteria();
-        provider=locationManager.getBestProvider(criteria,false);
+        Criteria criteria = new Criteria();
+        provider = locationManager.getBestProvider(criteria, false);
         // allow dangerous permission to access location
         if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED &&
@@ -76,34 +77,31 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
                         != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(WorkersMapsActivity.this, new String[]
                     {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 0);
-        }
-        else
-        {
-            Location location=locationManager.getLastKnownLocation(provider);
-            if (location !=null) {
+        } else {
+            Location location = locationManager.getLastKnownLocation(provider);
+            if (location != null) {
                 onLocationChanged(location);
             }
         }
         mapFragment.getMapAsync(this);
         getAssignedCustomer();
     }
-    String customer_id="";
+
+    String customer_id = "";
 
     private void getAssignedCustomer() {
-        String worker_id=FirebaseAuth.getInstance().getCurrentUser().getUid();
-        DatabaseReference assignedCustomerRef=FirebaseDatabase.getInstance().getReference().child("users").child("workers")
-                .child(worker_id);
+        String worker_id = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference assignedCustomerRef = FirebaseDatabase.getInstance().getReference().child("users").child("workers")
+                .child(worker_id).child("customerid");
         assignedCustomerRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists())
-                {
-                    Map<String, Object> map=(Map<String, Object>)dataSnapshot.getValue();
-                    if (map.get("customerid")!=null)
-                    {
-                        customer_id=map.get("customerid").toString();
-                        getAssignedCustomerPickupLocation();
-                    }
+                if (dataSnapshot.exists()) {
+
+
+                    customer_id = dataSnapshot.getValue().toString();
+                    getAssignedCustomerPickupLocation();
+
                 }
             }
 
@@ -113,28 +111,25 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
             }
         });
     }
-    private void getAssignedCustomerPickupLocation()
-    {
-        DatabaseReference assignedPickupLocationRef=FirebaseDatabase.getInstance().getReference().child("CustomerRequests")
+
+    private void getAssignedCustomerPickupLocation() {
+        DatabaseReference assignedPickupLocationRef = FirebaseDatabase.getInstance().getReference().child("CustomerRequests")
                 .child(customer_id).child("l");
         assignedPickupLocationRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists())
-                {
-                    List<Object> map=(List<Object>)dataSnapshot.getValue();
-                    double locationlat=0;
-                    double locationlng=0;
-                    if (map.get(0)!=null)
-                    {
-                        locationlat=Double.parseDouble(map.get(0).toString());
+                if (dataSnapshot.exists()) {
+                    List<Object> map = (List<Object>) dataSnapshot.getValue();
+                    double locationlat = 0;
+                    double locationlng = 0;
+                    if (map.get(0) != null) {
+                        locationlat = Double.parseDouble(map.get(0).toString());
                     }
-                    if (map.get(1)!=null)
-                    {
-                        locationlng=Double.parseDouble(map.get(1).toString());
+                    if (map.get(1) != null) {
+                        locationlng = Double.parseDouble(map.get(1).toString());
 
                     }
-                    LatLng customerpickuplocation=new LatLng(locationlat,locationlng);
+                    LatLng customerpickuplocation = new LatLng(locationlat, locationlng);
                     mMap.addMarker(new MarkerOptions().position(customerpickuplocation).title("pick up location"));
 
                 }
@@ -155,7 +150,7 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
         // Add a marker in your location
         LatLng position = new LatLng(lat, lng);
         mMap.addMarker(new MarkerOptions().position(position).title("Marker in Bungoma"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position,10));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 10));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(10), 200, null);
         if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED ||
@@ -171,14 +166,13 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
 
     @Override
     public void onLocationChanged(Location location) {
-        lat=location.getLatitude();
-        lng=location.getLongitude();
-        if (mMap!=null)
-        {
-            LatLng position=new LatLng(lat,lng);
+        lat = location.getLatitude();
+        lng = location.getLongitude();
+        if (mMap != null) {
+            LatLng position = new LatLng(lat, lng);
             mMap.addMarker(new MarkerOptions()
                     .title("your location")
-                    .anchor(0.0f,1.0f)
+                    .anchor(0.0f, 1.0f)
                     .position(position));
             mMap.moveCamera(CameraUpdateFactory.newLatLng(position));
             // mMap.animateCamera(CameraUpdateFactory.zoomTo(10));
@@ -188,32 +182,59 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
                             != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(WorkersMapsActivity.this, new String[]
                         {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 0);
-            }
-            else
-            {
-                String worker_id= FirebaseAuth.getInstance().getCurrentUser().getUid();
-                DatabaseReference workersAvailable= FirebaseDatabase.getInstance().getReference("WorkersAvailable");
-                GeoFire geoFireAvailable=new GeoFire(workersAvailable);
-                DatabaseReference workersworking= FirebaseDatabase.getInstance().getReference("Workersworking");
-                GeoFire geoFireworking=new GeoFire(workersworking);
-                switch (customer_id)
-                {
+            } else {
+                String worker_id = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                DatabaseReference workersAvailable = FirebaseDatabase.getInstance().getReference("WorkersAvailable");
+
+                DatabaseReference workersworking = FirebaseDatabase.getInstance().getReference("WorkersWorking");
+                GeoFire geoFireAvailable = new GeoFire(workersAvailable);
+                GeoFire geoFireWorking = new GeoFire(workersworking);
+                switch(customer_id){
                     case "":
-                        geoFireworking.removeLocation(worker_id);
-                        geoFireAvailable.setLocation(worker_id,new GeoLocation(location.getLatitude(),location.getLongitude()));
+                        geoFireWorking.removeLocation(worker_id, new GeoFire.CompletionListener() {
+                            @Override
+                            public void onComplete(String key, DatabaseError error) {
+                                if (error != null) {
+                                    Toast.makeText(WorkersMapsActivity.this, "" + error.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                        geoFireAvailable.setLocation(worker_id, new GeoLocation(lat, lng), new GeoFire.CompletionListener() {
+                            @Override
+                            public void onComplete(String key, DatabaseError error) {
+                                if (error != null) {
+                                    Toast.makeText(WorkersMapsActivity.this, "" + error.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
                         break;
-                        default:
-                            geoFireAvailable.removeLocation(worker_id);
-                            geoFireworking.setLocation(worker_id,new GeoLocation(location.getLatitude(),location.getLongitude()));
-                            break;
+                    default:
+                        geoFireAvailable.removeLocation(worker_id, new GeoFire.CompletionListener() {
+                            @Override
+                            public void onComplete(String key, DatabaseError error) {
+                                if (error != null) {
+                                    Toast.makeText(WorkersMapsActivity.this, "" + error.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                        geoFireWorking.setLocation(worker_id, new GeoLocation(lat, lng), new GeoFire.CompletionListener() {
+                            @Override
+                            public void onComplete(String key, DatabaseError error) {
+                                if (error != null) {
+                                    Toast.makeText(WorkersMapsActivity.this, "" + error.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                        break;
                 }
 
-            }
 
+            }
 
 
         }
     }
+
     @Override
     protected void onPause() {
         super.onPause();
@@ -238,13 +259,11 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
                         != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(WorkersMapsActivity.this, new String[]
                     {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 0);
-        } else
-        {
-            locationManager.requestLocationUpdates(provider,180000,50,this);
+        } else {
+            locationManager.requestLocationUpdates(provider, 180000, 50, this);
         }
 
     }
-
 
 
     @Override

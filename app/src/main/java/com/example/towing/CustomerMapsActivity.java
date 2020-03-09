@@ -180,7 +180,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     }
     private Marker workermarker;
     private void getWorkerLocation(){
-         DatabaseReference workerlocation=FirebaseDatabase.getInstance().getReference().child("Workersworking").child(workerFoundId)
+         DatabaseReference workerlocation=FirebaseDatabase.getInstance().getReference().child("WorkersWorking").child(workerFoundId)
                  .child("l");
          workerlocation.addValueEventListener(new ValueEventListener() {
              @Override
@@ -204,6 +204,16 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                      {
                          workermarker.remove();
                      }
+                     Location loc1=new Location("");
+                     loc1.setLatitude(pickupLocation.latitude);
+                     loc1.setLongitude(pickupLocation.longitude);
+
+                     Location loc2=new Location("");
+                     loc2.setLatitude(worklatlng.latitude);
+                     loc2.setLongitude(worklatlng.longitude);
+
+                     float distance=loc1.distanceTo(loc2);
+                     btnRequest.setText("worker found"+String.valueOf(distance));
                      workermarker=mMap.addMarker(new MarkerOptions().position(worklatlng).title("your tower"));
 
                  }
