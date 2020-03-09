@@ -1,5 +1,6 @@
 package com.example.towing;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
@@ -27,9 +28,14 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.List;
+import java.util.Map;
 
 public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyCallback,LocationListener {
 
@@ -79,8 +85,67 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
             }
         }
         mapFragment.getMapAsync(this);
+        getAssignedCustomer();
     }
+    String customer_id="";
 
+    private void getAssignedCustomer() {
+        String worker_id=FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference assignedCustomerRef=FirebaseDatabase.getInstance().getReference().child("users").child("workers")
+                .child(worker_id);
+        assignedCustomerRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists())
+                {
+                    Map<String, Object> map=(Map<String, Object>)dataSnapshot.getValue();
+                    if (map.get("customerid")!=null)
+                    {
+                        customer_id=map.get("customerid").toString();
+                        getAssignedCustomerPickupLocation();
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+    private void getAssignedCustomerPickupLocation()
+    {
+        DatabaseReference assignedPickupLocationRef=FirebaseDatabase.getInstance().getReference().child("CustomerRequests")
+                .child(customer_id).child("l");
+        assignedPickupLocationRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists())
+                {
+                    List<Object> map=(List<Object>)dataSnapshot.getValue();
+                    double locationlat=0;
+                    double locationlng=0;
+                    if (map.get(0)!=null)
+                    {
+                        locationlat=Double.parseDouble(map.get(0).toString());
+                    }
+                    if (map.get(1)!=null)
+                    {
+                        locationlng=Double.parseDouble(map.get(1).toString());
+
+                    }
+                    LatLng customerpickuplocation=new LatLng(locationlat,locationlng);
+                    mMap.addMarker(new MarkerOptions().position(customerpickuplocation).title("pick up location"));
+
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
 
 
     @Override
@@ -126,22 +191,23 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
             }
             else
             {
-                String userid= FirebaseAuth.getInstance().getCurrentUser().getUid();
-                DatabaseReference reference= FirebaseDatabase.getInstance().getReference("WorkersAvailable");
-                GeoFire geoFire=new GeoFire(reference);
-                geoFire.setLocation(userid, new GeoLocation(location.getLatitude(), location.getLongitude()), new GeoFire.CompletionListener() {
-                    @Override
-                    public void onComplete(String key, DatabaseError error) {
-                        if (error!=null)
-                        {
-                            Toast.makeText(WorkersMapsActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                        else
-                        {
-                            Toast.makeText(WorkersMapsActivity.this, "saved successfully", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
+                String worker_id= FirebaseAuth.getInstance().getCurrentUser().getUid();
+                DatabaseReference workersAvailable= FirebaseDatabase.getInstance().getReference("WorkersAvailable");
+                GeoFire geoFireAvailable=new GeoFire(workersAvailable);
+                DatabaseReference workersworking= FirebaseDatabase.getInstance().getReference("Workersworking");
+                GeoFire geoFireworking=new GeoFire(workersworking);
+                switch (customer_id)
+                {
+                    case "":
+                        geoFireworking.removeLocation(worker_id);
+                        geoFireAvailable.setLocation(worker_id,new GeoLocation(location.getLatitude(),location.getLongitude()));
+                        break;
+                        default:
+                            geoFireAvailable.removeLocation(worker_id);
+                            geoFireworking.setLocation(worker_id,new GeoLocation(location.getLatitude(),location.getLongitude()));
+                            break;
+                }
+
             }
 
 

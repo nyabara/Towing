@@ -44,7 +44,7 @@ public class CustomerLoginActivity extends AppCompatActivity implements View.OnC
         if (firebaseUser!=null&&firebaseUser.isEmailVerified())
         {
             //finish();
-            startActivity(new Intent(CustomerLoginActivity.this,CustomerMapsActivity.class));
+            //startActivity(new Intent(CustomerLoginActivity.this,CustomerMapsActivity.class));
         }
 
         progressDialog=new ProgressDialog(this);

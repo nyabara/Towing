@@ -30,12 +30,18 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.HashMap;
+import java.util.List;
 
 public class CustomerMapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
     FirebaseAuth firebaseAuth;
@@ -113,7 +119,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                 });
                  pickupLocation=new LatLng(lat,lng);
                 mMap.addMarker(new MarkerOptions().position(pickupLocation).title("pick up here"));
-                btnRequest.setText("finding you a tower...");
+                btnRequest.setText("request a tow...");
                 getClosestWorker();
             }
         });
@@ -121,7 +127,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     private boolean workerFound=false;
     private double radius=1;
     private  String workerFoundId;
-    private void getClosestWorker()
+     private void getClosestWorker()
     {
         DatabaseReference closetWorkerRef=FirebaseDatabase.getInstance().getReference("WorkersAvailable");
         GeoFire geoFire=new GeoFire(closetWorkerRef);
@@ -134,6 +140,14 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                 {
                     workerFound=true;
                     workerFoundId=key;
+                    String customer_id=FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    DatabaseReference workeref=FirebaseDatabase.getInstance().getReference().child("users").child("workers")
+                            .child(workerFoundId);
+                    HashMap map=new HashMap();
+                    map.put("customerid",customer_id);
+                    workeref.updateChildren(map);
+                    btnRequest.setText("Looking a tow for you");
+                    getWorkerLocation();
                 }
 
             }
@@ -163,6 +177,45 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
             }
         });
+    }
+    private Marker workermarker;
+    private void getWorkerLocation(){
+         DatabaseReference workerlocation=FirebaseDatabase.getInstance().getReference().child("Workersworking").child(workerFoundId)
+                 .child("l");
+         workerlocation.addValueEventListener(new ValueEventListener() {
+             @Override
+             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                 if (dataSnapshot.exists())
+                 {
+                     List<Object> map=(List<Object>) dataSnapshot.getValue();
+                     double locationlat=0;
+                     double locationlng=0;
+                     btnRequest.setText("tower found");
+                     if (map.get(0)!=null)
+                     {
+                         locationlat=Double.parseDouble(map.get(0).toString());
+                     }
+                     if (map.get(1)!=null)
+                     {
+                         locationlng=Double.parseDouble(map.get(1).toString());
+                     }
+                     LatLng worklatlng=new LatLng(locationlat,locationlng);
+                     if (workermarker!=null)
+                     {
+                         workermarker.remove();
+                     }
+                     workermarker=mMap.addMarker(new MarkerOptions().position(worklatlng).title("your tower"));
+
+                 }
+
+             }
+
+             @Override
+             public void onCancelled(@NonNull DatabaseError databaseError) {
+
+             }
+         });
+
     }
 
 
