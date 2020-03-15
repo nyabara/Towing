@@ -25,6 +25,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -91,7 +92,7 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
 
     private void getAssignedCustomer() {
         String worker_id = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        DatabaseReference assignedCustomerRef = FirebaseDatabase.getInstance().getReference().child("users").child("workers")
+        final DatabaseReference assignedCustomerRef = FirebaseDatabase.getInstance().getReference().child("users").child("workers")
                 .child(worker_id).child("customerid");
         assignedCustomerRef.addValueEventListener(new ValueEventListener() {
             @Override
@@ -103,6 +104,19 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
                     getAssignedCustomerPickupLocation();
 
                 }
+                else
+                {
+                    customer_id="";
+                    if (pickupMarker!=null)
+                    {
+                        pickupMarker.remove();
+                    }
+                    if (assignedPickupLocationRefListener!=null)
+                    {
+                        assignedCustomerRef.removeEventListener(assignedPickupLocationRefListener);
+                    }
+
+                }
             }
 
             @Override
@@ -111,14 +125,17 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
             }
         });
     }
+    Marker pickupMarker;
+    DatabaseReference assignedPickupLocationRef;
+    ValueEventListener assignedPickupLocationRefListener;
 
     private void getAssignedCustomerPickupLocation() {
-        DatabaseReference assignedPickupLocationRef = FirebaseDatabase.getInstance().getReference().child("CustomerRequests")
+        assignedPickupLocationRef = FirebaseDatabase.getInstance().getReference().child("CustomerRequests")
                 .child(customer_id).child("l");
-        assignedPickupLocationRef.addValueEventListener(new ValueEventListener() {
+        assignedPickupLocationRefListener=assignedPickupLocationRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
+                if (dataSnapshot.exists()&&!customer_id.equals("")) {
                     List<Object> map = (List<Object>) dataSnapshot.getValue();
                     double locationlat = 0;
                     double locationlng = 0;
@@ -130,7 +147,7 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
 
                     }
                     LatLng customerpickuplocation = new LatLng(locationlat, locationlng);
-                    mMap.addMarker(new MarkerOptions().position(customerpickuplocation).title("pick up location"));
+                    pickupMarker=mMap.addMarker(new MarkerOptions().position(customerpickuplocation).title("pick up location"));
 
                 }
             }
@@ -149,18 +166,10 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
 
         // Add a marker in your location
         LatLng position = new LatLng(lat, lng);
-        mMap.addMarker(new MarkerOptions().position(position).title("Marker in Bungoma"));
+        //mMap.addMarker(new MarkerOptions().position(position).title("Marker in Bungoma"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 10));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(10), 200, null);
-        if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(WorkersMapsActivity.this, new String[]
-                    {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 0);
-        } else {
-            mMap.setMyLocationEnabled(true);
-        }
+        mMap.setMyLocationEnabled(true);
 
     }
 
@@ -170,19 +179,9 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
         lng = location.getLongitude();
         if (mMap != null) {
             LatLng position = new LatLng(lat, lng);
-            mMap.addMarker(new MarkerOptions()
-                    .title("your location")
-                    .anchor(0.0f, 1.0f)
-                    .position(position));
             mMap.moveCamera(CameraUpdateFactory.newLatLng(position));
-            // mMap.animateCamera(CameraUpdateFactory.zoomTo(10));
-            if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED ||
-                    ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                            != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(WorkersMapsActivity.this, new String[]
-                        {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 0);
-            } else {
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(10));
+
                 String worker_id = FirebaseAuth.getInstance().getCurrentUser().getUid();
                 DatabaseReference workersAvailable = FirebaseDatabase.getInstance().getReference("WorkersAvailable");
 
@@ -226,7 +225,6 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
                             }
                         });
                         break;
-                }
 
 
             }
@@ -238,16 +236,8 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
     @Override
     protected void onPause() {
         super.onPause();
-        if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(WorkersMapsActivity.this, new String[]
-                    {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 0);
-        } else {
             locationManager.removeUpdates(this);
 
-        }
     }
 
     @Override

@@ -45,11 +45,13 @@ import java.util.List;
 
 public class CustomerMapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
     FirebaseAuth firebaseAuth;
-    Button logout,btnRequest;
+    Button logout, btnRequest;
     LocationManager locationManager;
     String provider;
-    double lat,lng;
+    double lat, lng;
     LatLng pickupLocation;
+    private Boolean requestBool = false;
+    private Marker pickupMarker;
 
     private GoogleMap mMap;
 
@@ -57,29 +59,27 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_customer_maps);
-        logout=findViewById(R.id.logout);
-        btnRequest=findViewById(R.id.btnRequest);
-        firebaseAuth=FirebaseAuth.getInstance();
-        getActionBar();
+        logout = findViewById(R.id.logout);
+        btnRequest = findViewById(R.id.btnRequest);
+        firebaseAuth = FirebaseAuth.getInstance();
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        final FirebaseUser firebaseUser=FirebaseAuth.getInstance().getCurrentUser();
         logout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 firebaseAuth.getInstance().signOut();
-                startActivity(new Intent(CustomerMapsActivity.this,MainActivity.class));
+                startActivity(new Intent(CustomerMapsActivity.this, MainActivity.class));
                 finish();
                 return;
 
             }
         });
-        locationManager=(LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         //provide  a criteria for showing your location
-        Criteria criteria=new Criteria();
-        provider=locationManager.getBestProvider(criteria,false);
+        Criteria criteria = new Criteria();
+        provider = locationManager.getBestProvider(criteria, false);
         // allow dangerous permission to access location
         if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED &&
@@ -87,12 +87,9 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                         != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(CustomerMapsActivity.this, new String[]
                     {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 0);
-        }
-        else
-        {
-            Location location=locationManager.getLastKnownLocation(provider);
-            if (location!=null)
-            {
+        } else {
+            Location location = locationManager.getLastKnownLocation(provider);
+            if (location != null) {
                 onLocationChanged(location);
             }
         }
@@ -100,51 +97,83 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         btnRequest.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String user_id=firebaseAuth.getInstance().getCurrentUser().getUid();
-                DatabaseReference reQuestRef= FirebaseDatabase.getInstance().getReference("CustomerRequests");
-                GeoFire geoFire=new GeoFire(reQuestRef);
-                geoFire.setLocation(user_id, new GeoLocation(lat, lng), new GeoFire.CompletionListener() {
-                    @Override
-                    public void onComplete(String key, DatabaseError error) {
-                        if (error!=null)
-                        {
-                            Toast.makeText(CustomerMapsActivity.this, ""+error.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                        else
-                        {
-                            Toast.makeText(CustomerMapsActivity.this, "success", Toast.LENGTH_SHORT).show();
-                        }
-
+                if (requestBool) {
+                    requestBool = false;
+                    geoQuery.removeAllListeners();
+                    workerlocation.removeEventListener(workerlocationListener);
+                    if (workerFoundId!=null)
+                    {
+                        DatabaseReference workeref = FirebaseDatabase.getInstance().getReference().child("users").child("workers")
+                                .child(workerFoundId);
+                        workeref.setValue(true);
+                        workerFoundId=null;
                     }
-                });
-                 pickupLocation=new LatLng(lat,lng);
-                mMap.addMarker(new MarkerOptions().position(pickupLocation).title("pick up here"));
-                btnRequest.setText("request a tow...");
-                getClosestWorker();
+                    workerFound=false;
+                    radius=1;
+                    String user_id = firebaseAuth.getInstance().getCurrentUser().getUid();
+                    DatabaseReference reQuestRef = FirebaseDatabase.getInstance().getReference("CustomerRequests");
+                    GeoFire geoFire = new GeoFire(reQuestRef);
+                    geoFire.removeLocation(user_id, new GeoFire.CompletionListener() {
+                        @Override
+                        public void onComplete(String key, DatabaseError error) {
+                            if (error!=null)
+                            {
+                                Toast.makeText(CustomerMapsActivity.this, ""+error.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+                    if (pickupMarker!=null)
+                    {
+                        pickupMarker.remove();
+                    }
+                    btnRequest.setText("Call Tow");
+
+                } else {
+                    String user_id = firebaseAuth.getInstance().getCurrentUser().getUid();
+                    DatabaseReference reQuestRef = FirebaseDatabase.getInstance().getReference("CustomerRequests");
+                    GeoFire geoFire = new GeoFire(reQuestRef);
+                    geoFire.setLocation(user_id, new GeoLocation(lat, lng), new GeoFire.CompletionListener() {
+                        @Override
+                        public void onComplete(String key, DatabaseError error) {
+                            if (error != null) {
+                                Toast.makeText(CustomerMapsActivity.this, "" + error.getMessage(), Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(CustomerMapsActivity.this, "success", Toast.LENGTH_SHORT).show();
+                            }
+
+                        }
+                    });
+                    pickupLocation = new LatLng(lat, lng);
+                    pickupMarker=mMap.addMarker(new MarkerOptions().position(pickupLocation).title("pick up here"));
+                    btnRequest.setText("request a tow...");
+                    getClosestWorker();
+                }
+
             }
         });
     }
-    private boolean workerFound=false;
-    private double radius=1;
-    private  String workerFoundId;
-     private void getClosestWorker()
-    {
-        DatabaseReference closetWorkerRef=FirebaseDatabase.getInstance().getReference("WorkersAvailable");
-        GeoFire geoFire=new GeoFire(closetWorkerRef);
-        GeoQuery geoQuery=geoFire.queryAtLocation(new GeoLocation(pickupLocation.latitude,pickupLocation.longitude),radius);
+
+    private boolean workerFound = false;
+    private double radius = 1;
+    private String workerFoundId;
+    private GeoQuery geoQuery;
+
+    private void getClosestWorker() {
+        DatabaseReference closetWorkerRef = FirebaseDatabase.getInstance().getReference("WorkersAvailable");
+        GeoFire geoFire = new GeoFire(closetWorkerRef);
+        geoQuery = geoFire.queryAtLocation(new GeoLocation(pickupLocation.latitude, pickupLocation.longitude), radius);
         geoQuery.removeAllListeners();
         geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
-                if (!workerFound)
-                {
-                    workerFound=true;
-                    workerFoundId=key;
-                    String customer_id=FirebaseAuth.getInstance().getCurrentUser().getUid();
-                    DatabaseReference workeref=FirebaseDatabase.getInstance().getReference().child("users").child("workers")
+                if (!workerFound&&requestBool) {
+                    workerFound = true;
+                    workerFoundId = key;
+                    String customer_id = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    DatabaseReference workeref = FirebaseDatabase.getInstance().getReference().child("users").child("workers")
                             .child(workerFoundId);
-                    HashMap map=new HashMap();
-                    map.put("customerid",customer_id);
+                    HashMap map = new HashMap();
+                    map.put("customerid", customer_id);
                     workeref.updateChildren(map);
                     btnRequest.setText("Looking a tow for you");
                     getWorkerLocation();
@@ -164,8 +193,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
             @Override
             public void onGeoQueryReady() {
-                if (!workerFound)
-                {
+                if (!workerFound) {
                     radius++;
                     getClosestWorker();
                 }
@@ -178,56 +206,60 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             }
         });
     }
+
     private Marker workermarker;
-    private void getWorkerLocation(){
-         DatabaseReference workerlocation=FirebaseDatabase.getInstance().getReference().child("WorkersWorking").child(workerFoundId)
-                 .child("l");
-         workerlocation.addValueEventListener(new ValueEventListener() {
-             @Override
-             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                 if (dataSnapshot.exists())
-                 {
-                     List<Object> map=(List<Object>) dataSnapshot.getValue();
-                     double locationlat=0;
-                     double locationlng=0;
-                     btnRequest.setText("tower found");
-                     if (map.get(0)!=null)
-                     {
-                         locationlat=Double.parseDouble(map.get(0).toString());
-                     }
-                     if (map.get(1)!=null)
-                     {
-                         locationlng=Double.parseDouble(map.get(1).toString());
-                     }
-                     LatLng worklatlng=new LatLng(locationlat,locationlng);
-                     if (workermarker!=null)
-                     {
-                         workermarker.remove();
-                     }
-                     Location loc1=new Location("");
-                     loc1.setLatitude(pickupLocation.latitude);
-                     loc1.setLongitude(pickupLocation.longitude);
+    private DatabaseReference workerlocation;
+    private  ValueEventListener workerlocationListener;
+    private void getWorkerLocation() {
+        workerlocation = FirebaseDatabase.getInstance().getReference().child("WorkersWorking").child(workerFoundId)
+                .child("l");
+        workerlocationListener=workerlocation.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()&&requestBool) {
+                    List<Object> map = (List<Object>) dataSnapshot.getValue();
+                    double locationlat = 0;
+                    double locationlng = 0;
+                    btnRequest.setText("tower found");
+                    if (map.get(0) != null) {
+                        locationlat = Double.parseDouble(map.get(0).toString());
+                    }
+                    if (map.get(1) != null) {
+                        locationlng = Double.parseDouble(map.get(1).toString());
+                    }
+                    LatLng worklatlng = new LatLng(locationlat, locationlng);
+                    if (workermarker != null) {
+                        workermarker.remove();
+                    }
+                    Location loc1 = new Location("");
+                    loc1.setLatitude(pickupLocation.latitude);
+                    loc1.setLongitude(pickupLocation.longitude);
 
-                     Location loc2=new Location("");
-                     loc2.setLatitude(worklatlng.latitude);
-                     loc2.setLongitude(worklatlng.longitude);
+                    Location loc2 = new Location("");
+                    loc2.setLatitude(worklatlng.latitude);
+                    loc2.setLongitude(worklatlng.longitude);
 
-                     float distance=loc1.distanceTo(loc2);
-                     btnRequest.setText("worker found"+String.valueOf(distance));
-                     workermarker=mMap.addMarker(new MarkerOptions().position(worklatlng).title("your tower"));
+                    float distance = loc1.distanceTo(loc2);
 
-                 }
+                    if (distance <= 100) {
+                        btnRequest.setText("the driver is near");
+                    } else {
+                        btnRequest.setText("worker found" + String.valueOf(distance));
+                    }
 
-             }
+                    workermarker = mMap.addMarker(new MarkerOptions().position(worklatlng).title("your tower"));
 
-             @Override
-             public void onCancelled(@NonNull DatabaseError databaseError) {
+                }
 
-             }
-         });
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
 
     }
-
 
 
     @Override
@@ -236,32 +268,20 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
         // Add a marker in your current place and move the camera
         LatLng position = new LatLng(lat, lng);
-        mMap.addMarker(new MarkerOptions().position(position));
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position,10));
+        //mMap.addMarker(new MarkerOptions().position(position));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 10));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(10), 200, null);
-        if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(CustomerMapsActivity.this, new String[]
-                    {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 0);
-        } else {
-            mMap.setMyLocationEnabled(true);
-        }
+        mMap.setMyLocationEnabled(true);
 
 
     }
 
     @Override
     public void onLocationChanged(Location location) {
-        lat=location.getLatitude();
-        lng=location.getLongitude();
-        if (mMap!=null) {
+        lat = location.getLatitude();
+        lng = location.getLongitude();
+        if (mMap != null) {
             LatLng position = new LatLng(lat, lng);
-            mMap.addMarker(new MarkerOptions()
-                    .title("your location")
-                    .anchor(0.0f, 1.0f)
-                    .position(position));
             mMap.moveCamera(CameraUpdateFactory.newLatLng(position));
         }
 
