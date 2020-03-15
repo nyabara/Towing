@@ -29,6 +29,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -129,6 +130,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                     btnRequest.setText("Call Tow");
 
                 } else {
+                    requestBool=true;
                     String user_id = firebaseAuth.getInstance().getCurrentUser().getUid();
                     DatabaseReference reQuestRef = FirebaseDatabase.getInstance().getReference("CustomerRequests");
                     GeoFire geoFire = new GeoFire(reQuestRef);
@@ -144,8 +146,9 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                         }
                     });
                     pickupLocation = new LatLng(lat, lng);
-                    pickupMarker=mMap.addMarker(new MarkerOptions().position(pickupLocation).title("pick up here"));
-                    btnRequest.setText("request a tow...");
+                    pickupMarker=mMap.addMarker(new MarkerOptions().position(pickupLocation).title("pick up here")
+                            .icon(BitmapDescriptorFactory.fromResource(R.mipmap.customer_foreground)));
+                    //btnRequest.setText("request a tow...");
                     getClosestWorker();
                 }
 
@@ -247,7 +250,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                         btnRequest.setText("worker found" + String.valueOf(distance));
                     }
 
-                    workermarker = mMap.addMarker(new MarkerOptions().position(worklatlng).title("your tower"));
+                    workermarker = mMap.addMarker(new MarkerOptions().position(worklatlng).title("your tower")
+                    .icon(BitmapDescriptorFactory.fromResource(R.mipmap.tow_foreground)));
 
                 }
 
