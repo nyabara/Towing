@@ -48,6 +48,7 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
     String provider;
     double lat, lng;
     FirebaseAuth firebaseAuth;
+    private Boolean isloggingout=false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +62,8 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
         logout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                isloggingout=true;
+                disconnect();
                 firebaseAuth.getInstance().signOut();
                 startActivity(new Intent(WorkersMapsActivity.this, MainActivity.class));
                 finish();
@@ -191,7 +194,7 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
                 GeoFire geoFireAvailable = new GeoFire(workersAvailable);
                 GeoFire geoFireWorking = new GeoFire(workersworking);
                 switch(customer_id){
-                    case "":
+                    case " ":
                         geoFireWorking.removeLocation(worker_id, new GeoFire.CompletionListener() {
                             @Override
                             public void onComplete(String key, DatabaseError error) {
@@ -239,6 +242,31 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
     protected void onPause() {
         super.onPause();
             locationManager.removeUpdates(this);
+
+    }
+    private void disconnect()
+    {
+        String user_id=FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference workersAvailable = FirebaseDatabase.getInstance().getReference("WorkersAvailable");
+        GeoFire geoFire=new GeoFire(workersAvailable);
+        geoFire.removeLocation(user_id, new GeoFire.CompletionListener() {
+            @Override
+            public void onComplete(String key, DatabaseError error) {
+                if (error!=null)
+                {
+                    Toast.makeText(WorkersMapsActivity.this, ""+error.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (!isloggingout)
+        {
+            disconnect();
+        }
 
     }
 

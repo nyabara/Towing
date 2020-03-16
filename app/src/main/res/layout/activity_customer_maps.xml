@@ -8,9 +8,15 @@
 
     <Button
         android:id="@+id/logout"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="log out" />
+    <Button
+        android:id="@+id/setting"
+        android:layout_gravity="right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Setting" />
     <Button
         android:id="@+id/btnRequest"
         android:layout_width="match_parent"
