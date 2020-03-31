@@ -16,8 +16,12 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -42,8 +46,11 @@ import java.util.Map;
 
 public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
 
-    private GoogleMap mMap;
+    LinearLayout customerInfo;
+    TextView customername,customerphone,customerdestination;
+    ImageView mcustomerprofile;
     Button logout;
+    private GoogleMap mMap;
     LocationManager locationManager;
     String provider;
     double lat, lng;
@@ -54,7 +61,17 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_workers_maps);
+
         logout = findViewById(R.id.logout);
+
+        customerInfo=findViewById(R.id.customerInfo);
+
+        customername=findViewById(R.id.customername);
+        customerphone=findViewById(R.id.customerphone);
+        customerdestination=findViewById(R.id.customerdestination);
+
+        mcustomerprofile=findViewById(R.id.mcustomerprofile);
+
         firebaseAuth = FirebaseAuth.getInstance();
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -106,6 +123,8 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
 
                     customer_id = dataSnapshot.getValue().toString();
                     getAssignedCustomerPickupLocation();
+                    getAssignedCustomerDestination();
+                    getAssignedCustomerInfo();
 
                 }
                 else
@@ -119,6 +138,11 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
                     {
                         assignedCustomerRef.removeEventListener(assignedPickupLocationRefListener);
                     }
+                    customerInfo.setVisibility(View.GONE);
+                    customername.setText(" ");
+                    customerphone.setText(" ");
+                    customerdestination.setText("Destination---");
+                    mcustomerprofile.setImageResource(R.mipmap.user_foreground);
 
                 }
             }
@@ -129,6 +153,34 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
             }
         });
     }
+
+    private void getAssignedCustomerDestination() {
+        String worker_id = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        final DatabaseReference assignedCustomerRef = FirebaseDatabase.getInstance().getReference().child("users").child("workers")
+                .child(worker_id).child("CustomerRequests").child("destination");
+        assignedCustomerRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+
+
+                    String destination = dataSnapshot.getValue().toString();
+                    customerdestination.setText("Destination:"+destination);
+
+                }
+                else
+                {
+                   customerdestination.setText("Destination...");
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
     Marker pickupMarker;
     DatabaseReference assignedPickupLocationRef;
     ValueEventListener assignedPickupLocationRefListener;
@@ -162,6 +214,42 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
 
             }
         });
+    }
+    private void getAssignedCustomerInfo()
+    {
+        customerInfo.setVisibility(View.VISIBLE);
+        DatabaseReference mcustomerreference= FirebaseDatabase.getInstance().getReference().child("users").child("customers").child(customer_id);
+        mcustomerreference.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()&&dataSnapshot.getChildrenCount()>0)
+                {
+                    Map<String,Object> map=(Map<String, Object>)dataSnapshot.getValue();
+                    if (map.get("name")!=null)
+                    {
+                        customername.setText(map.get("name").toString());
+                    }
+                    if (map.get("phone")!=null)
+                    {
+                        customerphone.setText(map.get("phone").toString());
+
+                    }
+                    if (map.get("profileImageUri")!=null)
+                    {
+
+                        Glide.with(getApplication()).load(map.get("profileImageUri").toString()).into(mcustomerprofile);
+
+                    }
+                }
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
     }
 
 

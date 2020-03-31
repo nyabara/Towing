@@ -6,6 +6,11 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".CustomerSetActivity">
+    <ImageView
+        android:layout_width="?android:listPreferredItemHeight"
+        android:layout_height="?android:listPreferredItemHeight"
+        android:background="@mipmap/user_foreground"
+        android:id="@+id/customerprofile"/>
     <EditText
         android:id="@+id/name"
         android:layout_width="match_parent"

@@ -43,8 +43,8 @@ public class WorkerLoginActivity extends AppCompatActivity implements View.OnCli
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser!=null&&firebaseUser.isEmailVerified())
         {
-            //finish();
-            //startActivity(new Intent(WorkerLoginActivity.this,WorkersMapsActivity.class));
+            finish();
+            startActivity(new Intent(WorkerLoginActivity.this,WorkersMapsActivity.class));
         }
 
         progressDialog = new ProgressDialog(this);

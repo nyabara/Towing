@@ -1,6 +1,7 @@
 package com.example.towing;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
@@ -14,6 +15,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -25,6 +27,7 @@ import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.firebase.geofire.GeoQuery;
 import com.firebase.geofire.GeoQueryEventListener;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -33,14 +36,19 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -55,6 +63,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     private Marker pickupMarker;
 
     private GoogleMap mMap;
+    private String destination;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -154,7 +163,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                     pickupLocation = new LatLng(lat, lng);
                     pickupMarker = mMap.addMarker(new MarkerOptions().position(pickupLocation).title("pick up here")
                             .icon(BitmapDescriptorFactory.fromResource(R.mipmap.customer_foreground)));
-                    //btnRequest.setText("request a tow...");
+                    btnRequest.setText("cancel a tow...");
                     getClosestWorker();
                 }
 
@@ -169,6 +178,33 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                 return;
             }
         });
+        //PlacesClient placesClient = Places.createClient(this);
+        if (!Places.isInitialized()) {
+            Places.initialize(getApplicationContext(), "AIzaSyDgkF_nJaUiaFOz2RBz3jykP87IfUXwNbM");
+        }
+        // Initialize the AutocompleteSupportFragment.
+        AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
+                getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
+
+// Specify the types of place data to return.
+        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME));
+
+// Set up a PlaceSelectionListener to handle the response.
+        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                // TODO: Get info about the selected place.
+                destination=place.getName().toString();
+                //Log.i(destination, "Place: " + place.getName() + ", " + place.getId());
+            }
+
+            @Override
+            public void onError(Status status) {
+                // TODO: Handle the error.
+                Log.i(destination, "An error occurred: " + status);
+            }
+        });
+
     }
 
     private boolean workerFound = false;
@@ -189,9 +225,10 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                     workerFoundId = key;
                     String customer_id = FirebaseAuth.getInstance().getCurrentUser().getUid();
                     DatabaseReference workeref = FirebaseDatabase.getInstance().getReference().child("users").child("workers")
-                            .child(workerFoundId);
+                            .child(workerFoundId).child("CustomerRequests");
                     HashMap map = new HashMap();
                     map.put("customerid", customer_id);
+                    map.put("destination", destination);
                     workeref.updateChildren(map);
                     btnRequest.setText("Looking a tow for you");
                     getWorkerLocation();
@@ -278,6 +315,27 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
             }
         });
+        // Initialize the AutocompleteSupportFragment.
+        AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
+                getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
+
+// Specify the types of place data to return.
+        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME));
+
+// Set up a PlaceSelectionListener to handle the response.
+        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                destination=place.getName();
+
+            }
+
+            @Override
+            public void onError(Status status) {
+                status.getStatusMessage();
+            }
+        });
+
 
     }
 
@@ -322,4 +380,5 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     public void onProviderDisabled(String provider) {
 
     }
+
 }

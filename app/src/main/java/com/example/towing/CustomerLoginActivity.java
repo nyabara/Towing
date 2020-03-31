@@ -43,8 +43,8 @@ public class CustomerLoginActivity extends AppCompatActivity implements View.OnC
         FirebaseUser firebaseUser=FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser!=null&&firebaseUser.isEmailVerified())
         {
-            //finish();
-            //startActivity(new Intent(CustomerLoginActivity.this,CustomerMapsActivity.class));
+            finish();
+            startActivity(new Intent(CustomerLoginActivity.this,CustomerMapsActivity.class));
         }
 
         progressDialog=new ProgressDialog(this);

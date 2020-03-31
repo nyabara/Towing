@@ -8,9 +8,16 @@
 
     <Button
         android:id="@+id/logout"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="log out" />
+    <Button
+        android:layout_gravity="right"
+        android:id="@+id/setting"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="setting" />
+
 
     <fragment
         android:id="@+id/map"
@@ -18,4 +25,41 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".WorkersMapsActivity"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:padding="20sp"
+        android:id="@+id/customerInfo"
+        android:orientation="horizontal"
+        android:visibility="gone">
+        <ImageView
+            android:layout_width="?android:listPreferredItemHeight"
+            android:layout_height="?android:listPreferredItemHeight"
+            android:background="@mipmap/user_foreground"
+            android:id="@+id/mcustomerprofile"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="20sp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/customerdestination"
+                android:paddingBottom="10sp"/>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/customername"
+                android:paddingTop="10sp"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/customerphone"
+                android:paddingTop="10sp"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
 </FrameLayout>
