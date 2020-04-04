@@ -68,7 +68,7 @@ public class WorkerLoginActivity extends AppCompatActivity implements View.OnCli
 
     //signing up a worker to firebase
     private void SignUp() {
-        String email = txtemail.getText().toString().trim();
+        final String email = txtemail.getText().toString().trim();
         String password = txtpass.getText().toString().trim();
         if (TextUtils.isEmpty(email) && TextUtils.isEmpty(password)) {
             Toast.makeText(this, "please make sure you have filled in both email and password",
@@ -89,8 +89,8 @@ public class WorkerLoginActivity extends AppCompatActivity implements View.OnCli
                                             if (task.isSuccessful()) {
                                                 String user_id = firebaseAuth.getCurrentUser().getUid();
                                                 DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
-                                                        .child("users").child("workers").child(user_id);
-                                                databaseReference.setValue(true);
+                                                        .child("users").child("workers").child(user_id).child("name");
+                                                databaseReference.setValue(email);
                                                 Toast.makeText(WorkerLoginActivity.this
                                                         , "registered successfully, check your email for verification",
                                                         Toast.LENGTH_SHORT).show();

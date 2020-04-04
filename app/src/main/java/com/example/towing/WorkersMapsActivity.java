@@ -49,7 +49,7 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
     LinearLayout customerInfo;
     TextView customername,customerphone,customerdestination;
     ImageView mcustomerprofile;
-    Button logout;
+    Button logout,setting;
     private GoogleMap mMap;
     LocationManager locationManager;
     String provider;
@@ -63,6 +63,7 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
         setContentView(R.layout.activity_workers_maps);
 
         logout = findViewById(R.id.logout);
+        setting=findViewById(R.id.setting);
 
         customerInfo=findViewById(R.id.customerInfo);
 
@@ -106,6 +107,13 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
             }
         }
         mapFragment.getMapAsync(this);
+
+        setting.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(WorkersMapsActivity.this,WorkerSettingActivity.class));
+            }
+        });
         getAssignedCustomer();
     }
 
@@ -114,13 +122,11 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
     private void getAssignedCustomer() {
         String worker_id = FirebaseAuth.getInstance().getCurrentUser().getUid();
         final DatabaseReference assignedCustomerRef = FirebaseDatabase.getInstance().getReference().child("users").child("workers")
-                .child(worker_id).child("customerid");
+                .child(worker_id).child("CustomerRequests").child("customerid");
         assignedCustomerRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
-
-
                     customer_id = dataSnapshot.getValue().toString();
                     getAssignedCustomerPickupLocation();
                     getAssignedCustomerDestination();
@@ -191,7 +197,7 @@ public class WorkersMapsActivity extends FragmentActivity implements OnMapReadyC
         assignedPickupLocationRefListener=assignedPickupLocationRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()&&!customer_id.equals("")) {
+                if (dataSnapshot.exists()&&!customer_id.equals(" ")) {
                     List<Object> map = (List<Object>) dataSnapshot.getValue();
                     double locationlat = 0;
                     double locationlng = 0;

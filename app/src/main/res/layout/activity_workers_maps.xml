@@ -2,20 +2,20 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:map="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_height="match_parent"
     android:layout_width="match_parent"
-    >
+    android:layout_height="match_parent">
 
     <Button
         android:id="@+id/logout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="log out" />
+
     <Button
-        android:layout_gravity="right"
         android:id="@+id/setting"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="right"
         android:text="setting" />
 
 
@@ -24,40 +24,47 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".WorkersMapsActivity"/>
+        tools:context=".WorkersMapsActivity" />
+
     <LinearLayout
+        android:id="@+id/customerInfo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:padding="20sp"
-        android:id="@+id/customerInfo"
+        android:background="@android:color/white"
         android:orientation="horizontal"
+        android:padding="20sp"
         android:visibility="gone">
+
         <ImageView
+            android:id="@+id/mcustomerprofile"
             android:layout_width="?android:listPreferredItemHeight"
             android:layout_height="?android:listPreferredItemHeight"
-            android:background="@mipmap/user_foreground"
-            android:id="@+id/mcustomerprofile"/>
+            android:background="@mipmap/user_foreground" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingLeft="20sp">
+
             <TextView
+                android:id="@+id/customerdestination"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/customerdestination"
-                android:paddingBottom="10sp"/>
+                android:paddingBottom="10sp" />
+
             <TextView
+                android:id="@+id/customername"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/customername"
-                android:paddingTop="10sp"/>
+                android:paddingTop="10sp" />
+
             <TextView
+                android:id="@+id/customerphone"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/customerphone"
-                android:paddingTop="10sp"/>
+                android:paddingTop="10sp" />
 
         </LinearLayout>
 

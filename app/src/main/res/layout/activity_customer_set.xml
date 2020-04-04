@@ -32,7 +32,6 @@
         android:ems="10"
         android:hint="Phone"
         android:inputType="phone" />
-
     <Button
         android:id="@+id/confirm"
         android:layout_width="match_parent"

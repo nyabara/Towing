@@ -17,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.Target;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -153,7 +154,8 @@ String userid;
                     if (map.get("profileImageUri")!=null)
                     {
                      mprofileImageUri=map.get("profileImageUri").toString();
-                    Glide.with(getApplication()).load(mprofileImageUri).into(customerprofile);
+                    Glide.with(getApplication()).load(mprofileImageUri)
+                            .override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL).into(customerprofile);
 
                     }
                 }
