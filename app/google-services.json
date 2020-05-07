@@ -13,25 +13,15 @@
           "package_name": "com.example.towing"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "663057972791-kmgrvh02nul9jja2b8ln83cp63g09bd7.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDVi6htsCZT3HiU6cPC6KiXuaAZvkpps6g"
+          "current_key": "AIzaSyAh6IWcXwITOh_tLpEN_e656W_Ivrt6sSc"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "663057972791-kmgrvh02nul9jja2b8ln83cp63g09bd7.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

@@ -33,6 +33,7 @@ import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.firebase.geofire.GeoQuery;
 import com.firebase.geofire.GeoQueryEventListener;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -42,8 +43,13 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsResponse;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
@@ -61,17 +67,18 @@ import java.util.Map;
 
 public class CustomerMapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
     FirebaseAuth firebaseAuth;
-    Button logout, btnRequest, setting;
+    Button logout, btnRequest, setting,history;
     LocationManager locationManager;
     String provider;
     double lat, lng;
-    LatLng pickupLocation;
+    private LatLng pickupLocation;
+    private LatLng destinationLatLng;
     private Boolean requestBool = false;
     private Marker pickupMarker;
     RadioGroup radiogroup;
 
     private GoogleMap mMap;
-    private String destination,reQuestservice;
+    private String destination, reQuestservice;
     LinearLayout workerInfo;
     TextView workername, workerphone, workertow;
     ImageView workerprofile;
@@ -82,6 +89,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         setContentView(R.layout.activity_customer_maps);
 
         firebaseAuth = FirebaseAuth.getInstance();
+
+        destinationLatLng = new LatLng(0.0, 0.0);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -109,6 +118,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         logout = findViewById(R.id.logout);
         btnRequest = findViewById(R.id.btnRequest);
         setting = findViewById(R.id.setting);
+        history=findViewById(R.id.history);
 
         workerInfo = findViewById(R.id.workerInfo);
 
@@ -129,67 +139,32 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
             }
         });
+        history.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent=new Intent(CustomerMapsActivity.this,HistoryActivity.class);
+                intent.putExtra("customerOrDriver","customers");
+                startActivity(intent);
+            }
+        });
 
         btnRequest.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (requestBool) {
-                   requestBool = false;
 
-                    geoQuery.removeAllListeners();
-                    if (workerlocationListener!=null)
-                    {
-                        workerlocation.removeEventListener(workerlocationListener);
-                    }
-
-
-
-                    if (workerFoundId != null) {
-                        DatabaseReference workeref = FirebaseDatabase.getInstance().getReference().child("users").child("workers")
-                                .child(workerFoundId).child("CustomerRequests");
-                        workeref.removeValue();
-                        workerFoundId = null;
-                    }
-                    workerFound = false;
-                    radius = 1;
-                    String user_id = firebaseAuth.getInstance().getCurrentUser().getUid();
-                    DatabaseReference reQuestRef = FirebaseDatabase.getInstance().getReference("CustomerRequests");
-                    GeoFire geoFire = new GeoFire(reQuestRef);
-                    geoFire.removeLocation(user_id, new GeoFire.CompletionListener() {
-                        @Override
-                        public void onComplete(String key, DatabaseError error) {
-                            if (error!=null)
-                            {
-                                Toast.makeText(CustomerMapsActivity.this, ""+error.getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                    });
-                    if (pickupMarker != null) {
-                        pickupMarker.remove();
-                    }
-                    if (workermarker!=null)
-                    {
-                        workermarker.remove();
-                    }
-                    btnRequest.setText("Call Tow");
-                    workerInfo.setVisibility(View.GONE);
-                    workername.setText(" ");
-                    workerphone.setText(" ");
-                    workertow.setText(" ");
-                    //workerprofile.setImageResource(R.mipmap.user_foreground);
+                    endRide();
 
                 } else {
                     requestBool = true;
 
-                    int selectedid=radiogroup.getCheckedRadioButtonId();
-                    final RadioButton radioButton=findViewById(selectedid);
+                    int selectedid = radiogroup.getCheckedRadioButtonId();
+                    final RadioButton radioButton = findViewById(selectedid);
 
-                    if (radioButton.getText()==null)
-                    {
+                    if (radioButton.getText() == null) {
                         return;
                     }
-                    reQuestservice=radioButton.getText().toString();
-
+                    reQuestservice = radioButton.getText().toString();
 
 
                     String user_id = firebaseAuth.getInstance().getCurrentUser().getUid();
@@ -223,16 +198,17 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             }
         });
         //PlacesClient placesClient = Places.createClient(this);
-        if (!Places.isInitialized()) {
-            Places.initialize(getApplicationContext(), "AIzaSyDgkF_nJaUiaFOz2RBz3jykP87IfUXwNbM");
-        }
         // Initialize the AutocompleteSupportFragment.
+        //
+
+        Places.initialize(getApplicationContext(),"AIzaSyDwBPxwpg7G6DessJkHmZ9Kgrsf8r-Dknk");
+
         AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
                 getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
         autocompleteFragment.setCountry("KE");
 
 // Specify the types of place data to return.
-        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME));
+        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID,Place.Field.ADDRESS_COMPONENTS,Place.Field.NAME,Place.Field.LAT_LNG));
 
 // Set up a PlaceSelectionListener to handle the response.
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
@@ -240,6 +216,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             public void onPlaceSelected(Place place) {
                 // TODO: Get info about the selected place.
                 destination = place.getName();
+                destinationLatLng = place.getLatLng();
                 //Log.i(destination, "Place: " + place.getName() + ", " + place.getId());
             }
 
@@ -258,8 +235,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     private GeoQuery geoQuery;
 
     private void getClosestWorker() {
-
-
         DatabaseReference closetWorkerRef = FirebaseDatabase.getInstance().getReference("WorkersAvailable");
         GeoFire geoFire = new GeoFire(closetWorkerRef);
         geoQuery = geoFire.queryAtLocation(new GeoLocation(pickupLocation.latitude, pickupLocation.longitude), radius);
@@ -285,12 +260,20 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                                     String customer_id = FirebaseAuth.getInstance().getCurrentUser().getUid();
                                     DatabaseReference workeref = FirebaseDatabase.getInstance().getReference().child("users").child("workers")
                                             .child(workerFoundId).child("CustomerRequests");
-                                    HashMap map = new HashMap();
-                                    map.put("customerid", customer_id);
-                                    map.put("destination", destination);
-                                    workeref.updateChildren(map);
+                                    if (pickupLocation!=null&&destinationLatLng!=null)
+                                    {
+                                        HashMap map = new HashMap();
+                                        map.put("customerid", customer_id);
+                                        map.put("destination", destination);
+                                        map.put("destinationLat", destinationLatLng.latitude);
+                                        map.put("destinationLng", destinationLatLng.longitude);
+                                        workeref.updateChildren(map);
+                                    }
+
+
                                     getWorkerLocation();
                                     getWorkerInfo();
+                                    getRideHasEnded();
                                     btnRequest.setText("Looking a tow for you");
 
                                 }
@@ -426,6 +409,73 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
     }
 
+    private DatabaseReference rideHasEndedRef;
+    private ValueEventListener rideHasEndedRefListiner;
+
+    private void getRideHasEnded() {
+        rideHasEndedRef = FirebaseDatabase.getInstance().getReference().child("users").child("workers")
+                .child(workerFoundId).child("CustomerRequests").child("customerid");
+        rideHasEndedRefListiner = rideHasEndedRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+
+                } else {
+                    endRide();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void endRide() {
+        requestBool = false;
+        geoQuery.removeAllListeners();
+        if (workerlocationListener != null) {
+            workerlocation.removeEventListener(workerlocationListener);
+        }
+        if (rideHasEndedRefListiner != null) {
+            rideHasEndedRef.removeEventListener(rideHasEndedRefListiner);
+
+        }
+        if (workerFoundId != null) {
+            DatabaseReference workeref = FirebaseDatabase.getInstance().getReference().child("users").child("workers")
+                    .child(workerFoundId).child("CustomerRequests");
+            workeref.removeValue();
+            workerFoundId = null;
+        }
+        workerFound = false;
+        radius = 1;
+        String user_id = firebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference reQuestRef = FirebaseDatabase.getInstance().getReference("CustomerRequests");
+        GeoFire geoFire = new GeoFire(reQuestRef);
+        geoFire.removeLocation(user_id, new GeoFire.CompletionListener() {
+            @Override
+            public void onComplete(String key, DatabaseError error) {
+                if (error != null) {
+                    Toast.makeText(CustomerMapsActivity.this, "" + error.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        if (pickupMarker != null) {
+            pickupMarker.remove();
+        }
+        if (workermarker != null) {
+            workermarker.remove();
+        }
+        btnRequest.setText("Call Tow");
+        workerInfo.setVisibility(View.GONE);
+        workername.setText(" ");
+        workerphone.setText(" ");
+        workertow.setText(" ");
+        //workerprofile.setImageResource(R.mipmap.user_foreground);
+
+    }
+
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -436,7 +486,16 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         //mMap.addMarker(new MarkerOptions().position(position));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 10));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(10), 200, null);
-        mMap.setMyLocationEnabled(true);
+        if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(CustomerMapsActivity.this, new String[]
+                    {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 0);
+        } else {
+            mMap.setMyLocationEnabled(true);
+        }
+
 
 
     }

@@ -16,7 +16,9 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
-        <activity android:name=".WorkerSettingActivity"></activity>
+        <activity android:name=".HistorySetupActivity"></activity>
+        <activity android:name=".HistoryActivity" />
+        <activity android:name=".WorkerSettingActivity" />
         <activity android:name=".CustomerSetActivity" />
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
@@ -28,7 +30,7 @@
         -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="@string/google_maps_key" />
+            android:value="AIzaSyDwBPxwpg7G6DessJkHmZ9Kgrsf8r-Dknk" />
 
         <activity
             android:name=".WorkersMapsActivity"
